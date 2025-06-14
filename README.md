@@ -64,6 +64,8 @@ github-enterprise-mcp --enterprise-url=https://github.yourcompany.com --token=gh
      - `repo` (Full control of private repositories)
      - `read:org` (Read organization membership)
    - Copy the generated token
+   
+   If your GitHub Enterprise instance uses SSO authentication, you might also need an MFA bearer token to authenticate API requests.
 
 2. Create a `.env` file in the root of the project:
 
@@ -81,6 +83,7 @@ GH_AUTH_METHOD=token
 # Token authentication
 GH_TOKEN=your_personal_access_token
 GH_USERNAME=your_github_username
+GH_MFA_BEARER_TOKEN=your_mfa_bearer_token_if_required_for_sso
 
 # Session configuration (still needed for some internal operations)
 SESSION_SECRET=some_secure_random_string
@@ -171,6 +174,7 @@ Options:
   --version, -v            Display version information
   --port=NUMBER            Set the server port (default: 3000)
   --token=TOKEN            Set GitHub Personal Access Token
+  --mfa-token=TOKEN        Set GitHub MFA bearer token for SSO authentication
   --enterprise-url=URL     Set GitHub Enterprise URL (default: https://github.com)
   --api-url=URL            Set GitHub API URL (default: https://api.github.com)
 ```
@@ -185,6 +189,11 @@ npx github-enterprise-mcp --token=ghp_yourtokenhere
 With custom port:
 ```bash
 npx github-enterprise-mcp --port=4000 --token=ghp_yourtokenhere
+```
+
+With MFA bearer token (for SSO authentication):
+```bash
+npx github-enterprise-mcp --token=ghp_yourtokenhere --mfa-token=mfa_yourmfatokenhere
 ```
 
 With GitHub Enterprise:
@@ -375,6 +384,7 @@ To integrate the GitHub Enterprise MCP Server with VS Code, you can use a `mcp.j
       "env": {
         "GH_AUTH_METHOD": "token",
         "GH_TOKEN": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "GH_MFA_BEARER_TOKEN": "mfa_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         "GH_ENTERPRISE_URL": "https://github.com",
         "GH_ENTERPRISE_API_URL": "https://api.github.com"
       }
@@ -385,6 +395,7 @@ To integrate the GitHub Enterprise MCP Server with VS Code, you can use a `mcp.j
 
 Replace the values with your own:
 - `GH_TOKEN`: Your GitHub Personal Access Token (masked here for security)
+- `GH_MFA_BEARER_TOKEN`: Your GitHub MFA bearer token (if your GitHub Enterprise instance requires SSO authentication)
 - `GH_ENTERPRISE_URL`: Your GitHub Enterprise instance URL
 - `GH_ENTERPRISE_API_URL`: Your GitHub Enterprise API URL
 

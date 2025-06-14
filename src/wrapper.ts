@@ -18,6 +18,7 @@ export * from './types/index.js';
  */
 export interface McpServerOptions {
   token?: string;
+  mfaBearerToken?: string;
   enterpriseUrl?: string;
   apiUrl?: string;
   port?: number | string;
@@ -32,6 +33,10 @@ export async function createMcpServer(options: McpServerOptions = {}) {
   if (options.token) {
     process.env.GH_TOKEN = options.token;
     process.env.GH_AUTH_METHOD = 'token';
+  }
+  
+  if (options.mfaBearerToken) {
+    process.env.GH_MFA_BEARER_TOKEN = options.mfaBearerToken;
   }
   
   if (options.enterpriseUrl) {
@@ -57,7 +62,7 @@ export async function createMcpServer(options: McpServerOptions = {}) {
   // Create MCP server instance
   const server = new McpServer({
     name: 'github-enterprise-mcp',
-    version: '1.0.0',
+    version: '1.0.2',
     capabilities: {
       resources: {},
       tools: {},

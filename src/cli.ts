@@ -32,6 +32,7 @@ const displayLogo = () => {
  * --version: Display version information
  * --port=3000: Set the server port
  * --token=xxx: Set GitHub token
+ * --mfa-token=xxx: Set GitHub MFA bearer token
  * --enterprise-url=url: Set GitHub Enterprise URL
  * --api-url=url: Set GitHub API URL
  */
@@ -42,6 +43,7 @@ const parseArgs = () => {
     version: false,
     port: process.env.PORT || '3000',
     token: process.env.GH_TOKEN || '',
+    mfaBearerToken: process.env.GH_MFA_BEARER_TOKEN || '',
     enterpriseUrl: process.env.GH_ENTERPRISE_URL || 'https://github.com',
     apiUrl: process.env.GH_ENTERPRISE_API_URL || 'https://api.github.com'
   };
@@ -59,6 +61,8 @@ const parseArgs = () => {
       options.enterpriseUrl = arg.split('=')[1];
     } else if (arg.startsWith('--api-url=')) {
       options.apiUrl = arg.split('=')[1];
+    } else if (arg.startsWith('--mfa-token=')) {
+      options.mfaBearerToken = arg.split('=')[1];
     }
   }
 
@@ -77,21 +81,24 @@ Options:
   --version, -v            Display version information
   --port=NUMBER            Set the server port (default: 3000)
   --token=TOKEN            Set GitHub Personal Access Token
+  --mfa-token=TOKEN        Set GitHub MFA bearer token for SSO authentication
   --enterprise-url=URL     Set GitHub Enterprise URL (default: https://github.com)
   --api-url=URL            Set GitHub API URL (default: https://api.github.com)
 
 Examples:
   npx github-enterprise-mcp --token=ghp_yourtokenhere
   npx github-enterprise-mcp --port=4000 --token=ghp_yourtokenhere
+  npx github-enterprise-mcp --token=ghp_yourtokenhere --mfa-token=mfa_yourmfatokenhere
 
 Environment Variables:
   PORT                     Server port
   GH_TOKEN                 GitHub Personal Access Token
+  GH_MFA_BEARER_TOKEN      GitHub MFA bearer token for SSO authentication
   GH_AUTH_METHOD           Authentication method (token or oauth)
   GH_ENTERPRISE_URL        GitHub Enterprise URL
   GH_ENTERPRISE_API_URL    GitHub Enterprise API URL
 
-For more information, visit: https://github.com/yourusername/github-enterprise-mcp
+For more information, visit: https://github.com/akhilthomas236/github-enterprise-mcp
 `);
 };
 
@@ -115,6 +122,7 @@ const runServer = (options: CommandOptions) => {
   process.env.PORT = options.port;
   process.env.GH_AUTH_METHOD = 'token';
   if (options.token) process.env.GH_TOKEN = options.token;
+  if (options.mfaBearerToken) process.env.GH_MFA_BEARER_TOKEN = options.mfaBearerToken;
   process.env.GH_ENTERPRISE_URL = options.enterpriseUrl;
   process.env.GH_ENTERPRISE_API_URL = options.apiUrl;
 
@@ -170,6 +178,7 @@ interface CommandOptions {
   version: boolean;
   port: string;
   token: string;
+  mfaBearerToken: string;
   enterpriseUrl: string;
   apiUrl: string;
 }
