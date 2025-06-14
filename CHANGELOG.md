@@ -1,4 +1,22 @@
-# Release Notes - v1.0.2
+# Release Notes
+
+## v1.0.3 - Enhanced MFA Token Logging
+
+This version improves the logging and debugging for MFA bearer tokens to help diagnose issues with SSO authentication:
+
+- Added detailed logging of MFA token presence and length
+- Added raw header logging to verify what's actually being sent in requests
+- Added support for alternate MFA header formats that some GitHub Enterprise instances might require
+- Improved request header masking for better security when showing logs
+
+### Technical Details
+
+- The MFA bearer token header is now logged with detailed information about its presence
+- Raw header keys are logged to confirm exact header names being sent
+- Added comments explaining the different header formats that might be required
+- All sensitive information continues to be properly masked in logs
+
+## v1.0.2 - MFA Bearer Token Support
 
 ## MFA Bearer Token Support
 

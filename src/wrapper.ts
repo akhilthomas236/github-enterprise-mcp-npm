@@ -62,7 +62,7 @@ export async function createMcpServer(options: McpServerOptions = {}) {
   // Create MCP server instance
   const server = new McpServer({
     name: 'github-enterprise-mcp',
-    version: '1.0.2',
+    version: '1.0.3',
     capabilities: {
       resources: {},
       tools: {},

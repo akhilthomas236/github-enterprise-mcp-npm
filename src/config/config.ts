@@ -46,7 +46,7 @@ const config = {
     name: 'github-enterprise-mcp',
     
     // MCP Server version
-    version: '1.0.2',
+    version: '1.0.3',
   },
   
   // Session configuration
