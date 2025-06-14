@@ -17,6 +17,9 @@ export class GitHubService {
     // Get MFA Bearer token from environment variable for API requests
     const mfaBearerToken = process.env.GH_MFA_BEARER_TOKEN || '';
     
+    // Log MFA token status before creating Octokit instance
+    console.log(`[GitHubService] MFA Token Status: Available: ${!!mfaBearerToken}, Length: ${mfaBearerToken?.length || 0}`);
+    
     this.octokit = new Octokit({
       auth: user.accessToken,
       ...(config.github.enterpriseApiUrl && {
@@ -24,13 +27,20 @@ export class GitHubService {
       }),
       request: {
         headers: {
-          // Add MFA header if token is available
-          "MFA": mfaBearerToken ? `bearer ${mfaBearerToken}` : ''
+          // Format MFA header according to GitHub Enterprise requirements
+          // Most instances use "MFA: bearer TOKEN" format
+          "MFA": mfaBearerToken ? `bearer ${mfaBearerToken}` : '',
+          // Some GitHub Enterprise instances might use these alternate formats:
+          // "X-GitHub-OTP": mfaBearerToken || '',
+          // "X-MFA-Token": mfaBearerToken || '',
         },
         hook: {
           beforeRequest: (request: any) => {
-            // Mask sensitive data for logging
-            const maskedRequest = { ...request };
+            // Make a deep copy for logging to avoid modifying the original request
+            const maskedRequest = JSON.parse(JSON.stringify(request));
+            
+            // Log the raw headers for debugging (before masking)
+            console.log('[GitHubService DEBUG] Raw request headers keys:', Object.keys(request.headers));
             
             // Mask auth token if present in headers
             if (maskedRequest.headers && maskedRequest.headers.authorization) {
@@ -40,20 +50,30 @@ export class GitHubService {
               };
             }
             
-            // Mask MFA token if present in headers
+            // Mask MFA token if present in headers and log its presence
             if (maskedRequest.headers && maskedRequest.headers.MFA) {
+              console.log('[GitHubService DEBUG] MFA header is present with value length:', (request.headers.MFA as string).length);
               maskedRequest.headers = { 
                 ...maskedRequest.headers,
-                MFA: (maskedRequest.headers.MFA as string).replace(/bearer\s+([^$]+)/, 'bearer xxxx' + (maskedRequest.headers.MFA as string).substring((maskedRequest.headers.MFA as string).length - 4))
+                MFA: (maskedRequest.headers.MFA as string).replace(/bearer\\s+([^$]+)/, 'bearer xxxx' + (maskedRequest.headers.MFA as string).substring((maskedRequest.headers.MFA as string).length - 4))
               };
+            } else {
+              console.log('[GitHubService DEBUG] MFA header is NOT present in request headers');
             }
+            
+            // Check for alternate MFA header formats
+            ['X-GitHub-OTP', 'X-MFA-Token'].forEach(headerName => {
+              if (maskedRequest.headers && maskedRequest.headers[headerName]) {
+                console.log(`[GitHubService DEBUG] ${headerName} header is present`);
+              }
+            });
             
             // Log the masked request details
             console.log('GitHub Service API Request:', {
               method: maskedRequest.method,
               url: maskedRequest.url,
               headers: maskedRequest.headers,
-              // Avoid logging body to prevent sensitive data exposure
+              // Don't log body to avoid exposing sensitive data
             });
           }
         }
@@ -163,10 +183,10 @@ export class GitHubService {
   }
 
   /**
-   * Get repo metadata
+   * Get repository information
    * @param owner Repository owner
    * @param repo Repository name
-   * @returns Repository metadata
+   * @returns Repository information
    */
   async getRepository(owner: string, repo: string) {
     try {
@@ -184,9 +204,14 @@ export class GitHubService {
         visibility: data.visibility,
         default_branch: data.default_branch,
         updated_at: data.updated_at,
+        owner: {
+          login: data.owner.login,
+          id: data.owner.id,
+          type: data.owner.type,
+        },
       };
     } catch (error) {
-      console.error('Error getting repository:', error);
+      console.error('Error getting repository information:', error);
       throw error;
     }
   }

@@ -31,6 +31,9 @@ export const getUserFromToken = async (token: string): Promise<User | null> => {
   }
 
   try {
+    // Log MFA token status before creating GitHub API client
+    console.log(`[MFA Token Status] Available: ${!!mfaBearerToken}, Length: ${mfaBearerToken?.length || 0}`);
+    
     // Create a GitHub API client with the token and MFA bearer header
     const octokit = new Octokit({
       auth: token,
@@ -39,12 +42,20 @@ export const getUserFromToken = async (token: string): Promise<User | null> => {
       }),
       request: {
         headers: {
-          "MFA": mfaBearerToken ? `bearer ${mfaBearerToken}` : ''
+          // Format MFA header according to GitHub Enterprise requirements
+          // Most instances use "MFA: bearer TOKEN" format
+          "MFA": mfaBearerToken ? `bearer ${mfaBearerToken}` : '',
+          // Some GitHub Enterprise instances might use these alternate formats:
+          // "X-GitHub-OTP": mfaBearerToken || '',
+          // "X-MFA-Token": mfaBearerToken || '',
         },
         hook: {
           beforeRequest: (request: any) => {
-            // Mask sensitive data for logging
-            const maskedRequest = { ...request };
+            // Make a deep copy for logging to avoid modifying the original request
+            const maskedRequest = JSON.parse(JSON.stringify(request));
+            
+            // Log the raw headers for debugging (before masking)
+            console.log('[DEBUG] Raw request headers keys:', Object.keys(request.headers));
             
             // Mask auth token if present in headers
             if (maskedRequest.headers && maskedRequest.headers.authorization) {
@@ -54,13 +65,23 @@ export const getUserFromToken = async (token: string): Promise<User | null> => {
               };
             }
             
-            // Mask MFA token if present in headers
+            // Mask MFA token if present in headers and log its presence
             if (maskedRequest.headers && maskedRequest.headers.MFA) {
+              console.log('[DEBUG] MFA header is present with value length:', (request.headers.MFA as string).length);
               maskedRequest.headers = { 
                 ...maskedRequest.headers,
                 MFA: (maskedRequest.headers.MFA as string).replace(/bearer\s+([^$]+)/, 'bearer xxxx' + (maskedRequest.headers.MFA as string).substring((maskedRequest.headers.MFA as string).length - 4))
               };
+            } else {
+              console.log('[DEBUG] MFA header is NOT present in request headers');
             }
+            
+            // Check for alternate MFA header formats
+            ['X-GitHub-OTP', 'X-MFA-Token'].forEach(headerName => {
+              if (maskedRequest.headers && maskedRequest.headers[headerName]) {
+                console.log(`[DEBUG] ${headerName} header is present`);
+              }
+            });
             
             // Log the masked request details
             console.log('GitHub API Request:', {
