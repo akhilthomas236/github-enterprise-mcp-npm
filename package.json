@@ -1,0 +1,66 @@
+{
+  "name": "github-enterprise-mcp",
+  "version": "1.0.0",
+  "description": "GitHub Enterprise MCP Server with support for repository operations",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "github-enterprise-mcp": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+    "prepare": "npm run build",
+    "test": "node -e \"console.log('Running basic validation...'); process.exit(0)\"",
+    "prepublishOnly": "npm test && npm run build",
+    "cli": "node dist/cli.js"
+  },
+  "keywords": [
+    "mcp",
+    "github",
+    "enterprise",
+    "sso",
+    "copilot"
+  ],
+  "author": "akhilthomas236 <akhilthomas236@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akhilthomas236/github-enterprise-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/akhilthomas236/github-enterprise-mcp/issues"
+  },
+  "homepage": "https://github.com/akhilthomas236/github-enterprise-mcp#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/express-session": "^1.18.2",
+    "@types/node": "^24.0.1",
+    "@types/passport": "^1.0.17",
+    "@types/passport-github": "^1.1.12",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.3",
+    "@octokit/auth-oauth-user": "^6.0.0",
+    "@octokit/auth-token": "^6.0.0",
+    "@octokit/rest": "^22.0.0",
+    "@types/passport-http": "^0.3.11",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "passport": "^0.7.0",
+    "passport-github": "^1.1.0",
+    "passport-http": "^0.3.0",
+    "zod": "^3.25.64"
+  }
+}

@@ -1,0 +1,29 @@
+# npm ignore file
+# Exclude source files
+src/
+tests/
+.github/
+.vscode/
+
+# Exclude development and config files
+.env
+.env.*
+.gitignore
+tsconfig.json
+.eslintrc*
+.prettierrc*
+.editorconfig
+*.log
+test-*.js
+
+# Include dist folder
+!dist/
+
+# Exclude test and example files
+**/*.test.js
+**/*.spec.js
+examples/
+
+# Include readme and license
+!README.md
+!LICENSE
