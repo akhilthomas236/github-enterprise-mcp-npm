@@ -228,6 +228,7 @@ npm run dev
 | GH_ENTERPRISE_API_URL | GitHub Enterprise API URL (e.g., https://github.example.com/api/v3) |
 | GH_AUTH_METHOD | Authentication method: 'token' or 'oauth' |
 | GH_TOKEN | Personal Access Token (for token authentication) |
+| GH_MFA_BEARER_TOKEN | MFA Bearer token for "MFA:bearer" header (optional) |
 | GH_USERNAME | GitHub username (for token authentication) |
 | GH_CLIENT_ID | GitHub OAuth App Client ID (for OAuth authentication) |
 | GH_CLIENT_SECRET | GitHub OAuth App Client Secret (for OAuth authentication) |

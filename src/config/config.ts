@@ -33,6 +33,9 @@ const config = {
     // Personal Access Token (for token authentication)
     token: process.env.GH_TOKEN || '',
     
+    // MFA bearer token for additional authentication header
+    mfaBearerToken: process.env.GH_MFA_BEARER_TOKEN || '',
+    
     // Username associated with the token (for token authentication)
     username: process.env.GH_USERNAME || '',
   },

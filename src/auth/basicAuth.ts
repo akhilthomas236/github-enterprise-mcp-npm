@@ -16,6 +16,9 @@ export interface User {
 // Store authenticated users and their tokens
 const authenticatedUsers = new Map<string, User>();
 
+// Get MFA Bearer token from environment variable
+const mfaBearerToken = process.env.GH_MFA_BEARER_TOKEN || '';
+
 /**
  * Get user information from GitHub using a token
  * @param token GitHub Personal Access Token with appropriate scopes
@@ -28,12 +31,47 @@ export const getUserFromToken = async (token: string): Promise<User | null> => {
   }
 
   try {
-    // Create a GitHub API client with the token
+    // Create a GitHub API client with the token and MFA bearer header
     const octokit = new Octokit({
       auth: token,
       ...(config.github.enterpriseApiUrl && {
         baseUrl: config.github.enterpriseApiUrl,
       }),
+      request: {
+        headers: {
+          "MFA": mfaBearerToken ? `bearer ${mfaBearerToken}` : ''
+        },
+        hook: {
+          beforeRequest: (request: any) => {
+            // Mask sensitive data for logging
+            const maskedRequest = { ...request };
+            
+            // Mask auth token if present in headers
+            if (maskedRequest.headers && maskedRequest.headers.authorization) {
+              maskedRequest.headers = { 
+                ...maskedRequest.headers,
+                authorization: 'Bearer xxxx' + (maskedRequest.headers.authorization as string).substring((maskedRequest.headers.authorization as string).length - 4)
+              };
+            }
+            
+            // Mask MFA token if present in headers
+            if (maskedRequest.headers && maskedRequest.headers.MFA) {
+              maskedRequest.headers = { 
+                ...maskedRequest.headers,
+                MFA: (maskedRequest.headers.MFA as string).replace(/bearer\s+([^$]+)/, 'bearer xxxx' + (maskedRequest.headers.MFA as string).substring((maskedRequest.headers.MFA as string).length - 4))
+              };
+            }
+            
+            // Log the masked request details
+            console.log('GitHub API Request:', {
+              method: maskedRequest.method,
+              url: maskedRequest.url,
+              headers: maskedRequest.headers,
+              // Don't log body to avoid exposing sensitive data
+            });
+          }
+        }
+      }
     });
     
     // Get user information to verify the token works

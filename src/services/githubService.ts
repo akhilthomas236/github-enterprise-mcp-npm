@@ -14,11 +14,50 @@ export class GitHubService {
    * @param user Authenticated user with access token
    */
   constructor(user: User) {
+    // Get MFA Bearer token from environment variable for API requests
+    const mfaBearerToken = process.env.GH_MFA_BEARER_TOKEN || '';
+    
     this.octokit = new Octokit({
       auth: user.accessToken,
       ...(config.github.enterpriseApiUrl && {
         baseUrl: config.github.enterpriseApiUrl,
       }),
+      request: {
+        headers: {
+          // Add MFA header if token is available
+          "MFA": mfaBearerToken ? `bearer ${mfaBearerToken}` : ''
+        },
+        hook: {
+          beforeRequest: (request: any) => {
+            // Mask sensitive data for logging
+            const maskedRequest = { ...request };
+            
+            // Mask auth token if present in headers
+            if (maskedRequest.headers && maskedRequest.headers.authorization) {
+              maskedRequest.headers = { 
+                ...maskedRequest.headers,
+                authorization: 'Bearer xxxx' + (maskedRequest.headers.authorization as string).substring((maskedRequest.headers.authorization as string).length - 4)
+              };
+            }
+            
+            // Mask MFA token if present in headers
+            if (maskedRequest.headers && maskedRequest.headers.MFA) {
+              maskedRequest.headers = { 
+                ...maskedRequest.headers,
+                MFA: (maskedRequest.headers.MFA as string).replace(/bearer\s+([^$]+)/, 'bearer xxxx' + (maskedRequest.headers.MFA as string).substring((maskedRequest.headers.MFA as string).length - 4))
+              };
+            }
+            
+            // Log the masked request details
+            console.log('GitHub Service API Request:', {
+              method: maskedRequest.method,
+              url: maskedRequest.url,
+              headers: maskedRequest.headers,
+              // Avoid logging body to prevent sensitive data exposure
+            });
+          }
+        }
+      }
     });
   }
 

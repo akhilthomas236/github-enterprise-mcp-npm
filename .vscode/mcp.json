@@ -7,6 +7,7 @@
       "env": {
         "GH_AUTH_METHOD": "token",
         "GH_TOKEN": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "GH_MFA_BEARER_TOKEN": "mfa_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         "GH_ENTERPRISE_URL": "https://github.com",
         "GH_ENTERPRISE_API_URL": "https://api.github.com"
       }
