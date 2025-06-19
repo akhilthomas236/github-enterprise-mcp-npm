@@ -34,3 +34,24 @@ export interface GitHubBranch {
   };
   protected: boolean;
 }
+
+/**
+
+* GitHub pull request information
+
+*/
+
+export interface GitHubPullRequest {
+  id: number;
+  number: number;
+  title: string;
+  html_url: string;
+  url: string;
+  state: string;
+  created_at: string;
+  requested_reviewers?: Array<{
+    login: string;
+    id: number;
+    type: string;
+  }>;
+}
