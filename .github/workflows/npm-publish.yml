@@ -4,10 +4,9 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
-  release:
-    types: [created]
+    paths-ignore:
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   build:
@@ -27,12 +26,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org/'
       - run: npm ci
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Bump version and push
+        run: |
+          npm version patch
+          git push
+          git push --tags
       - run: npm run build
-      - run: npm publish
+      - name: Publish
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
