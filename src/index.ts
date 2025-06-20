@@ -24,15 +24,15 @@ const initializeAuthentication = async (): Promise<boolean> => {
 
     // Create Express app for HTTP Basic Authentication
     const app = express();
-    
+
     // Initialize passport
     app.use(passport.initialize());
-    
+
     // Configure GitHub authentication (this will set up HTTP Basic Auth)
     configureGitHubAuth();
-    
+
     // Add route for HTTP Basic Authentication (similar to Git)
-    app.get('/api/auth/basic', 
+    app.get('/api/auth/basic',
       passport.authenticate('basic', { session: false }),
       (req: Request, res: Response) => {
         const user = req.user as User;
@@ -51,14 +51,14 @@ const initializeAuthentication = async (): Promise<boolean> => {
         }
       }
     );
-    
+
     // Start API server for Basic Auth
     const PORT = config.server.port;
     app.listen(PORT, () => {
       console.log(`HTTP Basic Auth server running at http://localhost:${PORT}`);
       console.log(`Use curl -u 'username:token' http://localhost:${PORT}/api/auth/basic to test`);
     });
-    
+
     try {
       const user = await getUserFromToken(config.github.token);
       if (user) {
@@ -73,7 +73,7 @@ const initializeAuthentication = async (): Promise<boolean> => {
       console.error('Error during token authentication:', error);
       return false;
     }
-  } 
+  }
   // OAuth-based authentication (requires web server)
   else if (!isTokenAuth) {
     console.log('Using OAuth-based authentication with HTTP Basic Auth fallback');
@@ -91,7 +91,7 @@ const initializeAuthentication = async (): Promise<boolean> => {
     configureGitHubAuth();
 
     // Add route for HTTP Basic Authentication (similar to Git)
-    app.get('/api/auth/basic', 
+    app.get('/api/auth/basic',
       passport.authenticate('basic', { session: false }),
       (req: Request, res: Response) => {
         const user = req.user as User;
@@ -193,17 +193,17 @@ const registerMcpTools = () => {
         // Get the first authenticated user (for simplicity)
         // In a production environment, you would match the user to the request
         const user = authenticatedUsers.values().next().value;
-        
+
         if (!user) {
           return ResponseFormatter.error('No authenticated user. Please authenticate at the server URL.');
         }
-        
+
         const githubService = new GitHubService(user);
         const repositories = await githubService.listRepositories();
-        
+
         return ResponseFormatter.success(
           `Found ${repositories.length} repositories:\n\n` +
-          repositories.map(repo => 
+          repositories.map(repo =>
             `- ${repo.full_name} (${repo.visibility})\n  ${repo.description || 'No description'}\n  Default branch: ${repo.default_branch}`
           ).join('\n\n')
         );
@@ -227,17 +227,17 @@ const registerMcpTools = () => {
     async (request) => {
       try {
         const { owner, repo, branch, sourceBranch } = request;
-        
+
         // Get the first authenticated user (for simplicity)
         const user = authenticatedUsers.values().next().value;
-        
+
         if (!user) {
           return ResponseFormatter.error('No authenticated user. Please authenticate at the server URL.');
         }
-        
+
         const githubService = new GitHubService(user);
         const result = await githubService.createBranch(owner, repo, branch, sourceBranch);
-        
+
         return ResponseFormatter.success(
           `Successfully created branch "${branch}" in repository ${owner}/${repo}` +
           (sourceBranch ? ` from source branch "${sourceBranch}"` : '')
@@ -260,20 +260,20 @@ const registerMcpTools = () => {
     async (request) => {
       try {
         const { owner, repo } = request;
-        
+
         // Get the first authenticated user (for simplicity)
         const user = authenticatedUsers.values().next().value;
-        
+
         if (!user) {
           return ResponseFormatter.error('No authenticated user. Please authenticate at the server URL.');
         }
-        
+
         const githubService = new GitHubService(user);
         const branches = await githubService.listBranches(owner, repo);
-        
+
         return ResponseFormatter.success(
           `Branches in repository ${owner}/${repo}:\n\n` +
-          branches.map(branch => 
+          branches.map(branch =>
             `- ${branch.name}${branch.protected ? ' (protected)' : ''}`
           ).join('\n')
         );
@@ -295,17 +295,17 @@ const registerMcpTools = () => {
     async (request) => {
       try {
         const { owner, repo } = request;
-        
+
         // Get the first authenticated user (for simplicity)
         const user = authenticatedUsers.values().next().value;
-        
+
         if (!user) {
           return ResponseFormatter.error('No authenticated user. Please authenticate at the server URL.');
         }
-        
+
         const githubService = new GitHubService(user);
         const repository = await githubService.getRepository(owner, repo);
-        
+
         return ResponseFormatter.success(
           `Repository: ${repository.full_name}\n` +
           `Description: ${repository.description || 'No description'}\n` +
@@ -320,19 +320,58 @@ const registerMcpTools = () => {
       }
     }
   );
+
+  // Tool: Create pull request
+  server.tool(
+    'create-pull-request',
+    'Create a pull request from a source branch to a destination branch',
+    {
+      owner: z.string().describe('Repository owner/organization'),
+      repo: z.string().describe('Repository name'),
+      sourceBranch: z.string().describe('Source branch name (head)'),
+      destBranch: z.string().describe('Destination branch name (base)'),
+      title: z.string().optional().describe('Title for the pull request (optional)'),
+      body: z.string().optional().describe('Description for the pull request (optional)'),
+      reviewers: z.array(z.string()).optional().describe('GitHub usernames to request as reviewers (optional)'),
+    },
+    async (request) => {
+      try {
+        const { owner, repo, sourceBranch, destBranch, title, body, reviewers } = request;
+        // Get the first authenticated user (for simplicity)
+        const user = authenticatedUsers.values().next().value;
+        if (!user) {
+          return ResponseFormatter.error('No authenticated user. Please authenticate at the server URL.');
+        }
+        const githubService = new GitHubService(user);
+        const result = await githubService.createPullRequest(owner, repo, sourceBranch, destBranch, title, body, reviewers);
+        return ResponseFormatter.success(
+          `Successfully created pull request #${result.number} in repository ${owner}/${repo}\n` +
+          `From: ${sourceBranch}\n` +
+          `To: ${destBranch}\n\n` +
+          `Title: ${result.title}\n` +
+          `URL: ${result.html_url}` +
+          (reviewers && reviewers.length > 0 ? `\n\nRequested reviewers: ${reviewers.join(', ')}` : '')
+        );
+
+      } catch (error) {
+        console.error('Error creating pull request:', error);
+        return ResponseFormatter.error(error);
+      }
+    }
+  );
 };
 
 // Main function to run the MCP server
 async function main() {
   // Print configuration diagnostics on startup
   printConfigDiagnostics();
-  
+
   // Validate API URL format
   if (config.github.enterpriseApiUrl) {
     try {
       const url = new URL(config.github.enterpriseApiUrl);
       logInfo(`Using GitHub API URL: ${url.toString()}`);
-      
+
       // Warn about common incorrect formats
       if (url.pathname.includes('/api/v3') && url.hostname === 'github.com') {
         logWarning(`GitHub.com API should be 'https://api.github.com' not 'https://github.com/api/v3'`);
@@ -342,20 +381,20 @@ async function main() {
       process.exit(1);
     }
   }
-  
+
   // Initialize authentication
   const authInitialized = await initializeAuthentication();
   if (!authInitialized) {
     logError('Failed to initialize authentication. Exiting...');
     process.exit(1);
   }
-  
+
   // Register MCP tools
   registerMcpTools();
-  
+
   // Set up MCP server with stdio transport for Copilot
   const transport = new StdioServerTransport();
-  
+
   try {
     await server.connect(transport);
     logInfo('GitHub Enterprise MCP Server running');
